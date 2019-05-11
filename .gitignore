@@ -1,0 +1,6 @@
+src/.vs/
+src/Win32/
+src/x64/
+*.aps
+*.vcxproj.user
+*.zip
