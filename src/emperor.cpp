@@ -60,13 +60,9 @@ CUnknown *WINAPI CEmperorFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT *phr) {
 }
 
 CEmperorFilter::CEmperorFilter(LPUNKNOWN pUnk, HRESULT *phr)
-    : _inputPin(NAME("Input Pin"), this, phr, L"Input")
-    , _outputPin(NAME("Output Pin"), this, phr, L"Output")
-    , _canSeek(TRUE)
-    , _allocator(nullptr)
+    : CTransInPlaceFilter(FILTER_NAME, pUnk, CLSID_EmperorsClothes, phr)
     , _clothes(this)
-    , _idleTimeValue(_registry.ReadIdleTime())
-    , CBaseFilter(FILTER_NAME, pUnk, this, CLSID_EmperorsClothes) {
+    , _idleTimeValue(_registry.ReadIdleTime()) {
 }
 
 STDMETHODIMP CEmperorFilter::NonDelegatingQueryInterface(REFIID riid, void **ppv) {
@@ -81,45 +77,28 @@ STDMETHODIMP CEmperorFilter::NonDelegatingQueryInterface(REFIID riid, void **ppv
     }
 }
 
-int CEmperorFilter::GetPinCount() {
-    return 2;
+HRESULT CEmperorFilter::Transform(IMediaSample *pSample) {
+    return S_OK;
 }
 
-CBasePin *CEmperorFilter::GetPin(int n) {
-    switch (n) {
-    case 0:
-        return &_inputPin;
-    case 1:
-        return &_outputPin;
-    default:
-        return nullptr;
-    }
+HRESULT CEmperorFilter::CheckInputType(const CMediaType *mtIn) {
+    return S_OK;
 }
 
 STDMETHODIMP CEmperorFilter::Pause() {
     CAutoLock lock(m_pLock);
-    HRESULT hr = CBaseFilter::Pause();
-
-    if (_inputPin.IsConnected() == FALSE) {
-        _inputPin.EndOfStream();
-    }
 
     _clothes.Pause();
 
-    return hr;
+    return CTransInPlaceFilter::Pause();
 }
 
 STDMETHODIMP CEmperorFilter::Run(REFERENCE_TIME tStart) {
     CAutoLock lock(m_pLock);
-    HRESULT hr = CBaseFilter::Run(tStart);
-
-    if (_inputPin.IsConnected() == FALSE) {
-        _inputPin.EndOfStream();
-    }
 
     _clothes.Run();
 
-    return hr;
+    return CTransInPlaceFilter::Run(tStart);
 }
 
 STDMETHODIMP CEmperorFilter::GetPages(CAUUID *pPages) {
@@ -160,291 +139,6 @@ STDMETHODIMP CEmperorFilter::UpdateIdleTime(unsigned int idleTime) {
     _registry.WriteIdleTime(idleTime);
 
     return S_OK;
-}
-
-CEmperorInputPin::CEmperorInputPin(TCHAR *pObjectName, CEmperorFilter *pFilter, HRESULT *phr, LPCWSTR pPinName)
-    : CBaseInputPin(pObjectName, pFilter, pFilter, phr, pPinName)
-    , _filter(pFilter)
-    , _insideCheckMediaType(false) {
-    ASSERT(pFilter);
-}
-
-STDMETHODIMP CEmperorInputPin::CheckMediaType(const CMediaType *pmt) {
-    CAutoLock lock(m_pLock);
-
-    // If we are already inside CheckMediaType() for this pin, return NOERROR
-    // It is possble to hookup two of the tee filters and some other filter
-    // like the video effects sample to get into this situation. If we don't
-    // detect this situation, we will carry on looping till we blow the stack
-
-    if (_insideCheckMediaType) {
-        return NOERROR;
-    }
-
-    _insideCheckMediaType = true;
-
-    // The media types that we can support are entirely dependent on the
-    // downstream connections. If we have downstream connection, we should check with it
-
-    if (_filter->_outputPin.m_Connected != nullptr) {
-        // The pin is connected, check its peer
-        HRESULT hr = _filter->_outputPin.m_Connected->QueryAccept(pmt);
-        if (FAILED(hr)) {
-            _insideCheckMediaType = false;
-            return VFW_E_TYPE_NOT_ACCEPTED;
-        }
-    }
-
-    _insideCheckMediaType = false;
-    return NOERROR;
-}
-
-STDMETHODIMP CEmperorInputPin::BreakConnect() {
-    if (_filter->_allocator) {
-        _filter->_allocator->Release();
-        _filter->_allocator = nullptr;
-    }
-
-    return CBaseInputPin::BreakConnect();
-}
-
-STDMETHODIMP CEmperorInputPin::CompleteConnect(IPin *pReceivePin) {
-    ASSERT(pReceivePin);
-
-    HRESULT hr = CBaseInputPin::CompleteConnect(pReceivePin);
-    if (FAILED(hr)) {
-        return hr;
-    }
-
-    if (_filter->_outputPin.m_Connected != nullptr) {
-        if (m_mt != _filter->_outputPin.m_mt) {
-            _filter->ReconnectPin(&_filter->_outputPin, &m_mt);
-        }
-    }
-
-    return NOERROR;
-}
-
-STDMETHODIMP CEmperorInputPin::NotifyAllocator(IMemAllocator *pAllocator, BOOL bReadOnly) {
-    CheckPointer(pAllocator, E_FAIL);
-    CAutoLock lock(m_pLock);
-
-    if (_filter->_allocator) {
-        _filter->_allocator->Release();
-    }
-
-    pAllocator->AddRef();
-    _filter->_allocator = pAllocator;
-
-    return CBaseInputPin::NotifyAllocator(pAllocator, bReadOnly);
-}
-
-STDMETHODIMP CEmperorInputPin::Receive(IMediaSample *pSample) {
-    ASSERT(pSample);
-    CAutoLock lock(m_pLock);
-
-    HRESULT hr = CBaseInputPin::Receive(pSample);
-    if (FAILED(hr)) {
-        return hr;
-    }
-
-    return _filter->_outputPin.Deliver(pSample);
-}
-
-STDMETHODIMP CEmperorInputPin::EndOfStream() {
-    CAutoLock lock(m_pLock);
-    return _filter->_outputPin.DeliverEndOfStream();
-}
-
-STDMETHODIMP CEmperorInputPin::NewSegment(REFERENCE_TIME tStart, REFERENCE_TIME tStop, double dRate) {
-    CAutoLock lock(m_pLock);
-    return _filter->_outputPin.DeliverNewSegment(tStart, tStop, dRate);
-}
-
-STDMETHODIMP CEmperorInputPin::BeginFlush() {
-    CAutoLock lock(m_pLock);
-    return _filter->_outputPin.DeliverBeginFlush();
-}
-
-STDMETHODIMP CEmperorInputPin::EndFlush() {
-    CAutoLock lock(m_pLock);
-    return _filter->_outputPin.DeliverEndFlush();
-}
-
-CEmperorOutputPin::CEmperorOutputPin(TCHAR *pObjectName, CEmperorFilter *pFilter, HRESULT *phr, LPCWSTR pPinName)
-    : CBaseOutputPin(pObjectName, pFilter, pFilter, phr, pPinName)
-    , _filter(pFilter)
-    , _position(nullptr)
-    , _holdsSeek(false)
-    , _insideCheckMediaType(false) {
-    ASSERT(pFilter);
-}
-
-STDMETHODIMP CEmperorOutputPin::NonDelegatingQueryInterface(REFIID riid, void ** ppv) {
-    if (riid == IID_IMediaPosition || riid == IID_IMediaSeeking) {
-        if (_position) {
-            if (!_holdsSeek) {
-                return E_NOINTERFACE;
-            }
-            return _position->QueryInterface(riid, ppv);
-        }
-    } else {
-        return CBaseOutputPin::NonDelegatingQueryInterface(riid, ppv);
-    }
-
-    CAutoLock lock(m_pLock);
-    ASSERT(_position == nullptr);
-    IUnknown *mediaPosition = nullptr;
-
-    // Try to create a seeking implementation
-    if (InterlockedExchange(&_filter->_canSeek, FALSE) == FALSE) {
-        return E_NOINTERFACE;
-    }
-
-    // Create implementation of this dynamically as sometimes we may never
-    // try and seek. The helper object implements IMediaPosition and also
-    // the IMediaSelection control interface and simply takes the calls
-    // normally from the downstream filter and passes them upstream
-
-    HRESULT hr = CreatePosPassThru(GetOwner(), FALSE, &_filter->_inputPin, &mediaPosition);
-    if (mediaPosition == nullptr) {
-        InterlockedExchange(&_filter->_canSeek, TRUE);
-        return E_OUTOFMEMORY;
-    }
-
-    if (FAILED(hr)) {
-        InterlockedExchange(&_filter->_canSeek, TRUE);
-        mediaPosition->Release();
-        return hr;
-    }
-
-    _position = mediaPosition;
-    _holdsSeek = true;
-    return NonDelegatingQueryInterface(riid, ppv);
-}
-
-STDMETHODIMP_(ULONG) CEmperorOutputPin::NonDelegatingRelease() {
-    if (_holdsSeek) {
-        InterlockedExchange(&_filter->_canSeek, FALSE);
-        _holdsSeek = false;
-        _position->Release();
-    }
-
-    return CBaseOutputPin::NonDelegatingRelease();
-}
-
-STDMETHODIMP CEmperorOutputPin::EnumMediaTypes(IEnumMediaTypes **ppEnum) {
-    CAutoLock lock(m_pLock);
-    ASSERT(ppEnum);
-
-    if (_filter->_inputPin.m_Connected == nullptr) {
-        return VFW_E_NOT_CONNECTED;
-    }
-
-    return _filter->_inputPin.m_Connected->EnumMediaTypes(ppEnum);
-}
-
-STDMETHODIMP CEmperorOutputPin::CheckMediaType(const CMediaType *pmt) {
-    CAutoLock lock(m_pLock);
-
-    // If we are already inside CheckMediaType() for this pin, return NOERROR
-    // It is possble to hookup two of the filters and some other filter
-    // like the video effects sample to get into this situation. If we
-    // do not detect this, we will loop till we blow the stack
-
-    if (_insideCheckMediaType) {
-        return NOERROR;
-    }
-
-    _insideCheckMediaType = true;
-
-    // The input needs to have been conneced first
-    if (_filter->_inputPin.m_Connected == nullptr) {
-        _insideCheckMediaType = false;
-        return VFW_E_NOT_CONNECTED;
-    }
-
-    // Make sure that our input pin peer is happy with this
-    HRESULT hr = _filter->_inputPin.m_Connected->QueryAccept(pmt);
-    if (FAILED(hr)) {
-        _insideCheckMediaType = false;
-        return VFW_E_TYPE_NOT_ACCEPTED;
-    }
-
-    if (_filter->_outputPin.m_Connected != nullptr) {
-        // The pin is connected, check its peer
-        hr = _filter->_outputPin.m_Connected->QueryAccept(pmt);
-        if (FAILED(hr)) {
-            _insideCheckMediaType = false;
-            return VFW_E_TYPE_NOT_ACCEPTED;
-        }
-    }
-
-    _insideCheckMediaType = false;
-    return NOERROR;
-}
-
-STDMETHODIMP CEmperorOutputPin::CompleteConnect(IPin *pReceivePin) {
-    CAutoLock lock(m_pLock);
-    ASSERT(m_Connected == pReceivePin);
-
-    HRESULT hr = CBaseOutputPin::CompleteConnect(pReceivePin);
-    if (FAILED(hr)) {
-        return hr;
-    }
-
-    if (m_mt != _filter->_inputPin.m_mt) {
-        hr = _filter->ReconnectPin(_filter->_inputPin.m_Connected, &m_mt);
-        if (FAILED(hr)) {
-            return hr;
-        }
-    }
-
-    return NOERROR;
-}
-
-STDMETHODIMP CEmperorOutputPin::DecideAllocator(IMemInputPin *pPin, IMemAllocator **pAlloc) {
-    CheckPointer(pPin, E_POINTER);
-    CheckPointer(pAlloc, E_POINTER);
-    ASSERT(_filter->_allocator != nullptr);
-
-    *pAlloc = nullptr;
-
-    HRESULT hr = pPin->NotifyAllocator(_filter->_allocator, TRUE);
-    if (FAILED(hr)) {
-        return hr;
-    }
-
-    *pAlloc = _filter->_allocator;
-    _filter->_allocator->AddRef();
-    return NOERROR;
-}
-
-STDMETHODIMP CEmperorOutputPin::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *ppropInputRequest) {
-    return NOERROR;
-}
-
-STDMETHODIMP CEmperorOutputPin::Notify(IBaseFilter * pSender, Quality q) {
-    // We pass the message on, which means that we find the quality sink
-    // for our input pin and send it there
-
-    if (_filter->_inputPin.m_pQSink == nullptr) {
-        // No sink set, so pass it upstream
-        IQualityControl *pIQC;
-
-        HRESULT hr = VFW_E_NOT_FOUND;
-        if (_filter->_inputPin.m_Connected) {
-            _filter->_inputPin.m_Connected->QueryInterface(IID_IQualityControl, reinterpret_cast<void **>(&pIQC));
-
-            if (pIQC != nullptr) {
-                hr = pIQC->Notify(_filter, q);
-                pIQC->Release();
-            }
-        }
-        return hr;
-    } else {
-        return _filter->_inputPin.m_pQSink->Notify(_filter, q);
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////

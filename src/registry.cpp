@@ -28,7 +28,7 @@ unsigned int Registry::ReadIdleTime() const {
             return idleTime;
         }
     }
-    
+
     return IDLE_TIME_DEFAULT;
 }
 

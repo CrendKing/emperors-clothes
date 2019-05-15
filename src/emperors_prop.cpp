@@ -80,7 +80,7 @@ INT_PTR CEmperorsProp::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         }
     }
     }
-    
+
     // Let the parent class handle the message.
     return CBasePropertyPage::OnReceiveMessage(hwnd, uMsg, wParam, lParam);
 }
