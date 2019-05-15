@@ -35,7 +35,7 @@ constexpr wchar_t *FILTER_NAME_WIDE = Widen(FILTER_NAME_FULL);
 constexpr char *PROPERTY_PAGE_NAME = PROPERTY_PAGE_FULL;
 constexpr wchar_t *PROPERTY_PAGE_NAME_WIDE = Widen(PROPERTY_PAGE_FULL);
 
-constexpr char *CLOTHES_WINDOW_CLASS_NAME = "Clothes";
+constexpr char *CLOTHES_WINDOW_PROP_NAME = "Emperor's Clothes Prop";
 
 constexpr char *REGISTRY_KEY_NAME = "Software\\EmperorsClothes";
 constexpr char *REGISTRY_IDLE_TIME_VALUE_NAME = "IdleTime";

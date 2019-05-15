@@ -5,6 +5,7 @@
 #include "registry.h"
 #include "idle_time.h"
 
+
 class CEmperorFilter;
 class CEmperorOutputPin;
 
@@ -34,10 +35,15 @@ class CEmperorOutputPin : public CBaseOutputPin {
     friend class CEmperorInputPin;
 
     CEmperorFilter *_filter;
+    IUnknown *_position;
+    bool _holdsSeek;
     bool _insideCheckMediaType;
 
 public:
     CEmperorOutputPin(TCHAR *pObjectName, CEmperorFilter *pFilter, HRESULT *phr, LPCWSTR pPinName);
+
+    STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv);
+    STDMETHODIMP_(ULONG) NonDelegatingRelease();
 
     STDMETHODIMP EnumMediaTypes(IEnumMediaTypes **ppEnum);
     STDMETHODIMP CheckMediaType(const CMediaType *pmt);
@@ -59,6 +65,7 @@ class CEmperorFilter
 
     CEmperorInputPin _inputPin;
     CEmperorOutputPin _outputPin;
+    LONG _canSeek;              // Seekable output pin
     IMemAllocator *_allocator;  // Allocator from the input pin
 
     Clothes _clothes;
@@ -77,7 +84,6 @@ public:
     CBasePin *GetPin(int n);
     int GetPinCount();
 
-    STDMETHODIMP Stop();
     STDMETHODIMP Pause();
     STDMETHODIMP Run(REFERENCE_TIME tStart);
 

@@ -3,8 +3,6 @@
 #include "emperors_prop.h"
 
 
-HMODULE moduleHandle = nullptr;
-
 const AMOVIESETUP_MEDIATYPE sudPinTypes =
 {
     &MEDIATYPE_Video,        // Major CLSID
@@ -64,8 +62,9 @@ CUnknown *WINAPI CEmperorFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT *phr) {
 CEmperorFilter::CEmperorFilter(LPUNKNOWN pUnk, HRESULT *phr)
     : _inputPin(NAME("Input Pin"), this, phr, L"Input")
     , _outputPin(NAME("Output Pin"), this, phr, L"Output")
+    , _canSeek(TRUE)
     , _allocator(nullptr)
-    , _clothes(moduleHandle, this)
+    , _clothes(this)
     , _idleTimeValue(_registry.ReadIdleTime())
     , CBaseFilter(FILTER_NAME, pUnk, this, CLSID_EmperorsClothes) {
 }
@@ -97,16 +96,8 @@ CBasePin *CEmperorFilter::GetPin(int n) {
     }
 }
 
-STDMETHODIMP CEmperorFilter::Stop() {
-    HRESULT hr = CBaseFilter::Stop();
-    
-    //_clothes.Stop();
-    
-    return hr;
-}
-
 STDMETHODIMP CEmperorFilter::Pause() {
-    CAutoLock cObjectLock(m_pLock);
+    CAutoLock lock(m_pLock);
     HRESULT hr = CBaseFilter::Pause();
 
     if (_inputPin.IsConnected() == FALSE) {
@@ -119,7 +110,7 @@ STDMETHODIMP CEmperorFilter::Pause() {
 }
 
 STDMETHODIMP CEmperorFilter::Run(REFERENCE_TIME tStart) {
-    CAutoLock cObjectLock(m_pLock);
+    CAutoLock lock(m_pLock);
     HRESULT hr = CBaseFilter::Run(tStart);
 
     if (_inputPin.IsConnected() == FALSE) {
@@ -152,15 +143,15 @@ STDMETHODIMP CEmperorFilter::GetIdleTime(unsigned int *idleTime) const {
         return E_POINTER;
     }
     CAutoLock lock(m_pLock);
-    
+
     *idleTime = _idleTimeValue;
-    
+
     return S_OK;
 }
 
 STDMETHODIMP CEmperorFilter::UpdateIdleTime(unsigned int idleTime) {
     CAutoLock lock(m_pLock);
-    
+
     if (idleTime < IDLE_TIME_MIN || idleTime > IDLE_TIME_MAX) {
         return E_INVALIDARG;
     }
@@ -283,8 +274,63 @@ STDMETHODIMP CEmperorInputPin::EndFlush() {
 CEmperorOutputPin::CEmperorOutputPin(TCHAR *pObjectName, CEmperorFilter *pFilter, HRESULT *phr, LPCWSTR pPinName)
     : CBaseOutputPin(pObjectName, pFilter, pFilter, phr, pPinName)
     , _filter(pFilter)
+    , _position(nullptr)
+    , _holdsSeek(false)
     , _insideCheckMediaType(false) {
     ASSERT(pFilter);
+}
+
+STDMETHODIMP CEmperorOutputPin::NonDelegatingQueryInterface(REFIID riid, void ** ppv) {
+    if (riid == IID_IMediaPosition || riid == IID_IMediaSeeking) {
+        if (_position) {
+            if (!_holdsSeek) {
+                return E_NOINTERFACE;
+            }
+            return _position->QueryInterface(riid, ppv);
+        }
+    } else {
+        return CBaseOutputPin::NonDelegatingQueryInterface(riid, ppv);
+    }
+
+    CAutoLock lock(m_pLock);
+    ASSERT(_position == nullptr);
+    IUnknown *mediaPosition = nullptr;
+
+    // Try to create a seeking implementation
+    if (InterlockedExchange(&_filter->_canSeek, FALSE) == FALSE) {
+        return E_NOINTERFACE;
+    }
+
+    // Create implementation of this dynamically as sometimes we may never
+    // try and seek. The helper object implements IMediaPosition and also
+    // the IMediaSelection control interface and simply takes the calls
+    // normally from the downstream filter and passes them upstream
+
+    HRESULT hr = CreatePosPassThru(GetOwner(), FALSE, &_filter->_inputPin, &mediaPosition);
+    if (mediaPosition == nullptr) {
+        InterlockedExchange(&_filter->_canSeek, TRUE);
+        return E_OUTOFMEMORY;
+    }
+
+    if (FAILED(hr)) {
+        InterlockedExchange(&_filter->_canSeek, TRUE);
+        mediaPosition->Release();
+        return hr;
+    }
+
+    _position = mediaPosition;
+    _holdsSeek = true;
+    return NonDelegatingQueryInterface(riid, ppv);
+}
+
+STDMETHODIMP_(ULONG) CEmperorOutputPin::NonDelegatingRelease() {
+    if (_holdsSeek) {
+        InterlockedExchange(&_filter->_canSeek, FALSE);
+        _holdsSeek = false;
+        _position->Release();
+    }
+
+    return CBaseOutputPin::NonDelegatingRelease();
 }
 
 STDMETHODIMP CEmperorOutputPin::EnumMediaTypes(IEnumMediaTypes **ppEnum) {
@@ -378,19 +424,17 @@ STDMETHODIMP CEmperorOutputPin::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATO
     return NOERROR;
 }
 
-STDMETHODIMP_(HRESULT __stdcall) CEmperorOutputPin::Notify(IBaseFilter * pSender, Quality q) {
+STDMETHODIMP CEmperorOutputPin::Notify(IBaseFilter * pSender, Quality q) {
     // We pass the message on, which means that we find the quality sink
     // for our input pin and send it there
 
-    if (_filter->_inputPin.m_pQSink != nullptr) {
-        return _filter->_inputPin.m_pQSink->Notify(_filter, q);
-    } else {
+    if (_filter->_inputPin.m_pQSink == nullptr) {
         // No sink set, so pass it upstream
         IQualityControl *pIQC;
 
         HRESULT hr = VFW_E_NOT_FOUND;
         if (_filter->_inputPin.m_Connected) {
-            _filter->_inputPin.m_Connected->QueryInterface(IID_IQualityControl, (void**)&pIQC);
+            _filter->_inputPin.m_Connected->QueryInterface(IID_IQualityControl, reinterpret_cast<void **>(&pIQC));
 
             if (pIQC != nullptr) {
                 hr = pIQC->Notify(_filter, q);
@@ -398,10 +442,9 @@ STDMETHODIMP_(HRESULT __stdcall) CEmperorOutputPin::Notify(IBaseFilter * pSender
             }
         }
         return hr;
+    } else {
+        return _filter->_inputPin.m_pQSink->Notify(_filter, q);
     }
-
-    // Quality management is too hard to do
-    return NOERROR;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -421,9 +464,5 @@ STDAPI DllUnregisterServer() {
 extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-    if (moduleHandle == nullptr) {
-        moduleHandle = hModule;
-    }
-
     return DllEntryPoint(hModule, ul_reason_for_call, lpReserved);
 }
