@@ -2,6 +2,8 @@
 #include "constants.h"
 
 
+LASTINPUTINFO lastInput = { sizeof(LASTINPUTINFO) };
+
 inline void ShowCursor() {
     while (ShowCursor(TRUE) < 0);
 }
@@ -11,7 +13,6 @@ inline void HideCursor() {
 }
 
 void CALLBACK CheckLastInput(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
-    LASTINPUTINFO lastInput = { sizeof(lastInput) };
     GetLastInputInfo(&lastInput);
     DWORD idleTime = dwTime - lastInput.dwTime;
 

@@ -1,7 +1,6 @@
 #include "emperors_prop.h"
 #include "constants.h"
 #include "resource.h"
-#include <cmath>
 #include <commctrl.h>
 
 
@@ -36,13 +35,9 @@ HRESULT CEmperorsProp::OnActivate() {
 
     HRESULT hr = _idleTime->GetIdleTime(&_idleTimeValue);
     if (SUCCEEDED(hr)) {
-        int maxLength = static_cast<int>(ceil(log10(IDLE_TIME_MAX)));
-
-        SendDlgItemMessage(m_Dlg, IDC_EDIT_IDLE_TIME, EM_SETLIMITTEXT, maxLength, 0);
+        UDACCEL accels = { 0, 500 };
         SendDlgItemMessage(m_Dlg, IDC_SPIN_IDLE_TIME, UDM_SETRANGE32, IDLE_TIME_MIN, IDLE_TIME_MAX);
         SendDlgItemMessage(m_Dlg, IDC_SPIN_IDLE_TIME, UDM_SETPOS32, 0, _idleTimeValue);
-
-        UDACCEL accels = { 0, 500 };
         SendDlgItemMessage(m_Dlg, IDC_SPIN_IDLE_TIME, UDM_SETACCEL, 1, reinterpret_cast<LPARAM>(&accels));
     }
 
@@ -62,7 +57,7 @@ INT_PTR CEmperorsProp::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
             unsigned int newValue = GetDlgItemInt(hwnd, IDC_EDIT_IDLE_TIME, nullptr, FALSE);
             if (newValue < IDLE_TIME_MIN || newValue > IDLE_TIME_MAX) {
                 SendDlgItemMessage(m_Dlg, IDC_SPIN_IDLE_TIME, UDM_SETPOS32, 0, newValue);
-            } else {
+            } else if (_idleTimeValue != newValue) {
                 _idleTimeValue = newValue;
                 SetDirty();
             }
@@ -74,14 +69,16 @@ INT_PTR CEmperorsProp::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
     {
         LPNMUPDOWN upDown = reinterpret_cast<LPNMUPDOWN>(lParam);
         if (upDown->hdr.idFrom == IDC_SPIN_IDLE_TIME && upDown->hdr.code == UDN_DELTAPOS) {
-            _idleTimeValue = upDown->iPos + upDown->iDelta;
-            SetDirty();
+            unsigned int newValue = upDown->iPos + upDown->iDelta;
+            if (newValue >= IDLE_TIME_MIN && newValue <= IDLE_TIME_MAX && _idleTimeValue != newValue) {
+                _idleTimeValue = newValue;
+                SetDirty();
+            }
             return static_cast<LRESULT>(true);
         }
     }
     }
 
-    // Let the parent class handle the message.
     return CBasePropertyPage::OnReceiveMessage(hwnd, uMsg, wParam, lParam);
 }
 

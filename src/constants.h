@@ -42,7 +42,7 @@ constexpr char *REGISTRY_IDLE_TIME_VALUE_NAME = "IdleTime";
 
 constexpr unsigned int IDLE_TIME_MIN = 500;
 constexpr unsigned int IDLE_TIME_MAX = 60000;
-constexpr unsigned int IDLE_TIME_DEFAULT = 3000;
+constexpr unsigned int IDLE_TIME_DEFAULT = 2000;
 
 constexpr unsigned int TIMER_ID = 0;
 constexpr unsigned int TIMER_INTERVAL = 100;
