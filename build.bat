@@ -10,7 +10,7 @@ git reset --hard origin/master
 cd ..
 move dep\Samples\Win7Samples\multimedia\directshow\baseclasses .
 
-call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 
 devenv.exe /Upgrade baseclasses\baseclasses.sln
 

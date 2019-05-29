@@ -1,1 +1,1 @@
-regsvr32 /s emperors_clothes.dll
+regsvr32 /s emperors_clothes.ax
