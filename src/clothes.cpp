@@ -2,7 +2,8 @@
 #include "constants.h"
 
 
-LASTINPUTINFO lastInput = { sizeof(LASTINPUTINFO) };
+POINT lastCursorPos = {};
+DWORD lastCursorTime = 0;
 
 inline void ShowCursor() {
     while (ShowCursor(TRUE) < 0);
@@ -13,8 +14,16 @@ inline void HideCursor() {
 }
 
 void CALLBACK CheckLastInput(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
-    GetLastInputInfo(&lastInput);
-    DWORD idleTime = dwTime - lastInput.dwTime;
+    POINT curCursorPos;
+    if (GetCursorPos(&curCursorPos) == FALSE) {
+        return;
+    }
+
+    if (curCursorPos.x != lastCursorPos.x || curCursorPos.y != lastCursorPos.y) {
+        lastCursorPos = curCursorPos;
+        lastCursorTime = dwTime;
+    }
+    DWORD idleTime = dwTime - lastCursorTime;
 
     Clothes *_clothes = reinterpret_cast<Clothes *>(GetProp(hwnd, CLOTHES_WINDOW_PROP_NAME));
     if (idleTime > _clothes->GetIdleTimeValue()) {
