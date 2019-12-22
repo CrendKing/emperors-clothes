@@ -1,4 +1,4 @@
-set sdk_version=10.0.17134.0
+set sdk_version=10.0
 
 mkdir dep
 cd dep
@@ -15,7 +15,7 @@ call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliar
 devenv.exe /Upgrade baseclasses\baseclasses.sln
 
 MSBuild.exe /p:Configuration=Release_MBCS;Platform=x64;WindowsTargetPlatformVersion=%sdk_version% /m /nologo baseclasses\baseclasses.sln
-MSBuild.exe /p:Configuration=Release;Platform=x64;WindowsTargetPlatformVersion=%sdk_version% /m /nologo %~dp0src\emperors_clothes.sln
+MSBuild.exe /p:Configuration=Release;Platform=x64;WindowsTargetPlatformVersion=%sdk_version% /m /nologo %~dp0emperors_clothes\emperors_clothes.sln
 
 MSBuild.exe /p:Configuration=Release_MBCS;Platform=Win32;WindowsTargetPlatformVersion=%sdk_version% /m /nologo baseclasses\baseclasses.sln
-MSBuild.exe /p:Configuration=Release;Platform=x86;WindowsTargetPlatformVersion=%sdk_version% /m /nologo %~dp0src\emperors_clothes.sln
+MSBuild.exe /p:Configuration=Release;Platform=x86;WindowsTargetPlatformVersion=%sdk_version% /m /nologo %~dp0emperors_clothes\emperors_clothes.sln

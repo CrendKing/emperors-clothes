@@ -1,7 +1,7 @@
 baseclasses
-src/.vs/
-src/Win32/
-src/x64/
+emperors_clothes/.vs/
+emperors_clothes/Win32/
+emperors_clothes/x64/
 *.aps
 *.vcxproj.user
 *.zip
