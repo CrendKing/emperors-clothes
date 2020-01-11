@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "emperor.h"
 #include "constants.h"
 #include "emperors_prop.h"
@@ -71,7 +72,7 @@ STDMETHODIMP CEmperorFilter::NonDelegatingQueryInterface(REFIID riid, void **ppv
     if (riid == IID_IIdleTime) {
         return GetInterface(static_cast<IIdleTime *>(this), ppv);
     } else if (riid == IID_ISpecifyPropertyPages) {
-        return GetInterface(static_cast<ISpecifyPropertyPages*>(this), ppv);
+        return GetInterface(static_cast<ISpecifyPropertyPages *>(this), ppv);
     } else {
         return CBaseFilter::NonDelegatingQueryInterface(riid, ppv);
     }

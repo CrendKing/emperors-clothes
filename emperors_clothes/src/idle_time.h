@@ -1,7 +1,5 @@
 #pragma once
 
-#include <objbase.h>
-
 
 DECLARE_INTERFACE_(IIdleTime, IUnknown) {
     STDMETHOD(GetIdleTime)(unsigned int *idleTime) const PURE;

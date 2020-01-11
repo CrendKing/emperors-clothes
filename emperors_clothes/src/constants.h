@@ -1,7 +1,5 @@
 #pragma once
 
-#include <initguid.h>
-
 
 // {7797A4EA-AD10-4A5E-B511-20F84BBDD67D}
 DEFINE_GUID(CLSID_EmperorsClothes,

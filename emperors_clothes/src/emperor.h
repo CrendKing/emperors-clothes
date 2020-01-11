@@ -1,6 +1,5 @@
 #pragma once
 
-#include <streams.h>
 #include "clothes.h"
 #include "registry.h"
 #include "idle_time.h"
@@ -9,10 +8,6 @@ class CEmperorFilter
     : public CTransInPlaceFilter
     , public IIdleTime
     , public ISpecifyPropertyPages {
-    Clothes _clothes;
-    Registry _registry;
-    unsigned int _idleTimeValue;
-
 public:
     static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *phr);
 
@@ -31,4 +26,9 @@ public:
     STDMETHODIMP GetPages(CAUUID *pPages);
     STDMETHODIMP GetIdleTime(unsigned int *idleTime) const;
     STDMETHODIMP UpdateIdleTime(unsigned int idleTime);
+
+private:
+    Clothes _clothes;
+    Registry _registry;
+    unsigned int _idleTimeValue;
 };

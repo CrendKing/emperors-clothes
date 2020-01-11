@@ -1,7 +1,6 @@
+#include "pch.h"
 #include "emperors_prop.h"
 #include "constants.h"
-#include "resource.h"
-#include <commctrl.h>
 
 
 CUnknown *WINAPI CEmperorsProp::CreateInstance(LPUNKNOWN pUnk, HRESULT *phr) {

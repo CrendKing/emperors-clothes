@@ -1,9 +1,10 @@
+#include "pch.h"
 #include "registry.h"
 #include "constants.h"
 
 
 Registry::Registry() : _registryKey(nullptr) {
-    RegCreateKeyExA(HKEY_CURRENT_USER, REGISTRY_KEY_NAME, 0, nullptr, 0, KEY_QUERY_VALUE | KEY_SET_VALUE, nullptr, &_registryKey, nullptr);
+    RegCreateKeyEx(HKEY_CURRENT_USER, REGISTRY_KEY_NAME, 0, nullptr, 0, KEY_QUERY_VALUE | KEY_SET_VALUE, nullptr, &_registryKey, nullptr);
 }
 
 Registry::~Registry() {

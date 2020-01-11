@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "clothes.h"
 #include "constants.h"
 
@@ -25,7 +26,7 @@ void CALLBACK CheckLastInput(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTim
     }
     DWORD idleTime = dwTime - lastCursorTime;
 
-    Clothes *_clothes = reinterpret_cast<Clothes *>(GetProp(hwnd, CLOTHES_WINDOW_PROP_NAME));
+    const Clothes *_clothes = reinterpret_cast<const Clothes *>(GetProp(hwnd, CLOTHES_WINDOW_PROP_NAME));
     if (idleTime > _clothes->GetIdleTimeValue()) {
         HideCursor();
     } else if (idleTime <= TIMER_INTERVAL) {
