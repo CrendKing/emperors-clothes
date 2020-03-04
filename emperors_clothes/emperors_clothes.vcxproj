@@ -20,9 +20,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\clothes.h" />
-    <ClInclude Include="src\constants.h" />
+    <ClInclude Include="src\g_constants.h" />
     <ClInclude Include="src\emperor.h" />
-    <ClInclude Include="src\emperors_prop.h" />
+    <ClInclude Include="src\filter_prop.h" />
     <ClInclude Include="src\idle_time.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\registry.h" />
@@ -31,20 +31,21 @@
   <ItemGroup>
     <ClCompile Include="src\clothes.cpp" />
     <ClCompile Include="src\emperor.cpp" />
-    <ClCompile Include="src\emperors_prop.cpp" />
+    <ClCompile Include="src\filter_prop.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <ClCompile Include="src\registry.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\emperors_clothes.def" />
+    <None Include="src\$(ProjectName).def" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="src\emperors_clothes.rc" />
+    <ResourceCompile Include="src\$(ProjectName).rc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F54FAC0A-D62C-4C4A-9403-1AC40B59C277}</ProjectGuid>
@@ -56,20 +57,24 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>v142</PlatformToolset>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>v142</PlatformToolset>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
     <UseDebugLibraries>true</UseDebugLibraries>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>v142</PlatformToolset>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <PlatformToolset>v142</PlatformToolset>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
   </PropertyGroup>
@@ -120,16 +125,13 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <CallingConvention>StdCall</CallingConvention>
-      <AdditionalIncludeDirectories>..\baseclasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>strmbasd.lib;winmm.lib;msvcrtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>src\emperors_clothes.def</ModuleDefinitionFile>
-      <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
+      <ModuleDefinitionFile>$(ProjectDir)src\$(ProjectName).def</ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>..\baseclasses\$(Configuration)_MBCS</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -138,18 +140,17 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <CallingConvention>StdCall</CallingConvention>
-      <AdditionalIncludeDirectories>..\baseclasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>strmbase.lib;winmm.lib;msvcrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>src\emperors_clothes.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>$(ProjectDir)src\$(ProjectName).def</ModuleDefinitionFile>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\baseclasses\$(Configuration)_MBCS</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -163,16 +164,13 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <CallingConvention>StdCall</CallingConvention>
-      <AdditionalIncludeDirectories>..\baseclasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>strmbasd.lib;winmm.lib;msvcrtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>src\emperors_clothes.def</ModuleDefinitionFile>
-      <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
+      <ModuleDefinitionFile>$(ProjectDir)src\$(ProjectName).def</ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>..\baseclasses\$(Platform)\$(Configuration)_MBCS</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -184,18 +182,17 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <CallingConvention>StdCall</CallingConvention>
-      <AdditionalIncludeDirectories>..\baseclasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>strmbase.lib;winmm.lib;msvcrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>src\emperors_clothes.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>$(ProjectDir)src\$(ProjectName).def</ModuleDefinitionFile>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\baseclasses\$(Platform)\$(Configuration)_MBCS</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

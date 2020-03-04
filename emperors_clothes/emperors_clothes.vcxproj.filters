@@ -18,13 +18,7 @@
     <ClInclude Include="src\clothes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\constants.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\emperor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\emperors_prop.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\idle_time.h">
@@ -39,6 +33,12 @@
     <ClInclude Include="src\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\filter_prop.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\g_constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\clothes.cpp">
@@ -47,23 +47,23 @@
     <ClCompile Include="src\emperor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\emperors_prop.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\registry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\filter_prop.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\emperors_clothes.def">
+    <None Include="src\$(ProjectName).def">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="src\emperors_clothes.rc">
+    <ResourceCompile Include="src\$(ProjectName).rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>

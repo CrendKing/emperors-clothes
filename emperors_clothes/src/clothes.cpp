@@ -1,10 +1,10 @@
 #include "pch.h"
 #include "clothes.h"
-#include "constants.h"
+#include "g_constants.h"
 
 
-POINT lastCursorPos = {};
-DWORD lastCursorTime = 0;
+static POINT lastCursorPos = {};
+static DWORD lastCursorTime = 0;
 
 inline void ShowCursor() {
     while (ShowCursor(TRUE) < 0);
@@ -36,12 +36,12 @@ void CALLBACK CheckLastInput(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTim
 
 Clothes::Clothes(const IIdleTime *idleTime)
     : _hClothesWindow(nullptr)
-    , _idleTime(idleTime) {
+    , _idleTimeInterface(idleTime) {
 }
 
 unsigned int Clothes::GetIdleTimeValue() const {
     unsigned int _idleTimeValue;
-    HRESULT hr = _idleTime->GetIdleTime(&_idleTimeValue);
+    HRESULT hr = _idleTimeInterface->GetIdleTime(&_idleTimeValue);
 
     if (SUCCEEDED(hr)) {
         return _idleTimeValue;
@@ -50,15 +50,7 @@ unsigned int Clothes::GetIdleTimeValue() const {
     }
 }
 
-void Clothes::Pause() {
-    if (_hClothesWindow != nullptr) {
-        ShowCursor();
-        RemoveProp(_hClothesWindow, CLOTHES_WINDOW_PROP_NAME);
-        KillTimer(_hClothesWindow, TIMER_ID);
-    }
-}
-
-void Clothes::Run() {
+void Clothes::Start() {
     _hClothesWindow = GetForegroundWindow();
     if (_hClothesWindow == nullptr) {
         return;
@@ -68,5 +60,13 @@ void Clothes::Run() {
     if (GetProp(_hClothesWindow, CLOTHES_WINDOW_PROP_NAME) == nullptr) {
         SetProp(_hClothesWindow, CLOTHES_WINDOW_PROP_NAME, this);
         SetTimer(_hClothesWindow, TIMER_ID, TIMER_INTERVAL, CheckLastInput);
+    }
+}
+
+void Clothes::Stop() const {
+    if (_hClothesWindow != nullptr) {
+        ShowCursor();
+        RemoveProp(_hClothesWindow, CLOTHES_WINDOW_PROP_NAME);
+        KillTimer(_hClothesWindow, TIMER_ID);
     }
 }

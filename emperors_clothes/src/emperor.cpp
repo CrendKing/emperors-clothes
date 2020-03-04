@@ -1,67 +1,88 @@
 #include "pch.h"
 #include "emperor.h"
-#include "constants.h"
-#include "emperors_prop.h"
+#include "g_constants.h"
+#include "filter_prop.h"
 
 
-const AMOVIESETUP_MEDIATYPE sudPinTypes =
-{
-    &MEDIATYPE_Video,        // Major CLSID
-    &MEDIASUBTYPE_NULL       // Minor type
+#ifdef _DEBUG
+#pragma comment(lib, "strmbasd.lib")
+#else
+#pragma comment(lib, "strmbase.lib")
+#endif
+#pragma comment(lib, "winmm.lib")
+
+static constexpr REGPINTYPES PIN_TYPE_REG[] = {
+    { &MEDIATYPE_Video, &MEDIASUBTYPE_NULL },
+};
+static constexpr UINT PIN_TYPE_COUNT = sizeof(PIN_TYPE_REG) / sizeof(PIN_TYPE_REG[0]);
+
+static constexpr REGFILTERPINS PIN_REG[] = {
+    { nullptr          // pin name (obsolete)
+    , FALSE            // is pin rendered?
+    , FALSE            // is this output pin?
+    , FALSE            // Can the filter create zero instances?
+    , FALSE            // Does the filter create multiple instances?
+    , &CLSID_NULL      // filter CLSID the pin connects to (obsolete)
+    , nullptr          // pin name the pin connects to (obsolete)
+    , PIN_TYPE_COUNT   // pin media type count
+    , PIN_TYPE_REG },  // pin media types
+
+    { nullptr          // pin name (obsolete)
+    , FALSE            // is pin rendered?
+    , TRUE            // is this output pin?
+    , FALSE            // Can the filter create zero instances?
+    , FALSE            // Does the filter create multiple instances?
+    , &CLSID_NULL      // filter CLSID the pin connects to (obsolete)
+    , nullptr          // pin name the pin connects to (obsolete)
+    , PIN_TYPE_COUNT   // pin media type count
+    , PIN_TYPE_REG },  // pin media types
 };
 
-const AMOVIESETUP_PIN psudPins[] =
-{
-    { nullptr,               // Pin's string name (obsolete)
-      FALSE,                 // Is it rendered
-      FALSE,                 // Is it an output
-      FALSE,                 // Allowed none
-      FALSE,                 // Allowed many
-      &CLSID_NULL,           // Connects to filter (obsolete)
-      nullptr,               // Connects to pin (obsolete)
-      1,                     // Number of types
-      &sudPinTypes },        // Pin information
-    { nullptr,               // Pin's string name (obsolete)
-      FALSE,                 // Is it rendered
-      TRUE,                  // Is it an output
-      FALSE,                 // Allowed none
-      FALSE,                 // Allowed many
-      &CLSID_NULL,           // Connects to filter (obsolete)
-      nullptr,               // Connects to pin (obsolete)
-      1,                     // Number of types
-      &sudPinTypes }         // Pin information
+static constexpr ULONG PIN_COUNT = sizeof(PIN_REG) / sizeof(PIN_REG[0]);
+
+static constexpr AMOVIESETUP_FILTER FILTER_REG = {
+    &CLSID_EmperorsClothes,  // filter CLSID
+    FILTER_NAME_WIDE,       // filter name
+    MERIT_DO_NOT_USE,       // filter merit
+    PIN_COUNT,              // pin count
+    PIN_REG                 // pin information
 };
 
-const AMOVIESETUP_FILTER sudEmperorsClothes =
-{
-    &CLSID_EmperorsClothes,  // CLSID of filter
-    FILTER_NAME_WIDE,        // Filter's name
-    MERIT_DO_NOT_USE,        // Filter merit
-    2,                       // Number of pins
-    psudPins                 // Pin information
-};
-
-CFactoryTemplate g_Templates[2] = {
+CFactoryTemplate g_Templates[] = {
     { FILTER_NAME_WIDE
     , &CLSID_EmperorsClothes
     , CEmperorFilter::CreateInstance
     , nullptr
-    , &sudEmperorsClothes }
-    ,
+    , &FILTER_REG },
+
     { PROPERTY_PAGE_NAME_WIDE
     , &CLSID_PropertyPage
     , CEmperorsProp::CreateInstance
     , nullptr
-    , nullptr }
+    , nullptr },
 };
 int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
+
+STDAPI DllRegisterServer() {
+    return AMovieDllRegisterServer2(TRUE);
+}
+
+STDAPI DllUnregisterServer() {
+    return AMovieDllRegisterServer2(FALSE);
+}
+
+extern "C" DECLSPEC_NOINLINE BOOL WINAPI DllEntryPoint(HINSTANCE hInstance, ULONG ulReason, __inout_opt LPVOID pv);
+
+auto APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) -> BOOL {
+    return DllEntryPoint(hModule, ul_reason_for_call, lpReserved);
+}
 
 CUnknown *WINAPI CEmperorFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT *phr) {
     return new CEmperorFilter(pUnk, phr);
 }
 
 CEmperorFilter::CEmperorFilter(LPUNKNOWN pUnk, HRESULT *phr)
-    : CTransInPlaceFilter(FILTER_NAME, pUnk, CLSID_EmperorsClothes, phr)
+    : CTransInPlaceFilter(FILTER_NAME, pUnk, CLSID_EmperorsClothes, phr, false)
     , _clothes(this)
     , _idleTimeValue(_registry.ReadIdleTime()) {
 }
@@ -73,33 +94,33 @@ STDMETHODIMP CEmperorFilter::NonDelegatingQueryInterface(REFIID riid, void **ppv
         return GetInterface(static_cast<IIdleTime *>(this), ppv);
     } else if (riid == IID_ISpecifyPropertyPages) {
         return GetInterface(static_cast<ISpecifyPropertyPages *>(this), ppv);
-    } else {
-        return CBaseFilter::NonDelegatingQueryInterface(riid, ppv);
     }
-}
 
-HRESULT CEmperorFilter::Transform(IMediaSample *pSample) {
-    return S_OK;
+    return CBaseFilter::NonDelegatingQueryInterface(riid, ppv);
 }
 
 HRESULT CEmperorFilter::CheckInputType(const CMediaType *mtIn) {
     return S_OK;
 }
 
-STDMETHODIMP CEmperorFilter::Pause() {
-    CAutoLock lock(m_pLock);
-
-    _clothes.Pause();
-
-    return CTransInPlaceFilter::Pause();
+HRESULT CEmperorFilter::Transform(IMediaSample *pSample) {
+    return S_OK;
 }
 
 STDMETHODIMP CEmperorFilter::Run(REFERENCE_TIME tStart) {
     CAutoLock lock(m_pLock);
 
-    _clothes.Run();
+    _clothes.Start();
 
     return CTransInPlaceFilter::Run(tStart);
+}
+
+STDMETHODIMP CEmperorFilter::Pause() {
+    CAutoLock lock(m_pLock);
+
+    _clothes.Stop();
+
+    return CTransInPlaceFilter::Pause();
 }
 
 STDMETHODIMP CEmperorFilter::GetPages(CAUUID *pPages) {
@@ -140,24 +161,4 @@ STDMETHODIMP CEmperorFilter::UpdateIdleTime(unsigned int idleTime) {
     _registry.WriteIdleTime(idleTime);
 
     return S_OK;
-}
-
-////////////////////////////////////////////////////////////////////////
-//
-// Exported entry points for registration and unregistration
-//
-////////////////////////////////////////////////////////////////////////
-
-STDAPI DllRegisterServer() {
-    return AMovieDllRegisterServer2(TRUE);
-}
-
-STDAPI DllUnregisterServer() {
-    return AMovieDllRegisterServer2(FALSE);
-}
-
-extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
-
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-    return DllEntryPoint(hModule, ul_reason_for_call, lpReserved);
 }

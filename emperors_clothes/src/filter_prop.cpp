@@ -1,6 +1,6 @@
 #include "pch.h"
-#include "emperors_prop.h"
-#include "constants.h"
+#include "filter_prop.h"
+#include "g_constants.h"
 
 
 CUnknown *WINAPI CEmperorsProp::CreateInstance(LPUNKNOWN pUnk, HRESULT *phr) {
@@ -9,30 +9,30 @@ CUnknown *WINAPI CEmperorsProp::CreateInstance(LPUNKNOWN pUnk, HRESULT *phr) {
 
 CEmperorsProp::CEmperorsProp(LPUNKNOWN pUnk, HRESULT *phr)
     : CBasePropertyPage(PROPERTY_PAGE_NAME, pUnk, IDD_PROPPAGE, IDS_TITLE)
-    , _idleTime(nullptr) {
+    , _idleTimeInterface(nullptr) {
 }
 
 HRESULT CEmperorsProp::OnConnect(IUnknown *pUnk) {
-    if (pUnk == NULL) {
+    if (pUnk == nullptr) {
         return E_POINTER;
     }
 
-    ASSERT(_idleTime == nullptr);
-    return pUnk->QueryInterface(IID_IIdleTime, reinterpret_cast<void **>(&_idleTime));
+    ASSERT(_idleTimeInterface == nullptr);
+    return pUnk->QueryInterface(IID_IIdleTime, reinterpret_cast<void **>(&_idleTimeInterface));
 }
 
 HRESULT CEmperorsProp::OnDisconnect() {
-    if (_idleTime) {
-        _idleTime->Release();
-        _idleTime = nullptr;
+    if (_idleTimeInterface != nullptr) {
+        _idleTimeInterface->Release();
+        _idleTimeInterface = nullptr;
     }
     return S_OK;
 }
 
 HRESULT CEmperorsProp::OnActivate() {
-    ASSERT(_idleTime != nullptr);
+    ASSERT(_idleTimeInterface != nullptr);
 
-    HRESULT hr = _idleTime->GetIdleTime(&_idleTimeValue);
+    HRESULT hr = _idleTimeInterface->GetIdleTime(&_idleTimeValue);
     if (SUCCEEDED(hr)) {
         UDACCEL accels = { 0, 500 };
         SendDlgItemMessage(m_Dlg, IDC_SPIN_IDLE_TIME, UDM_SETRANGE32, IDLE_TIME_MIN, IDLE_TIME_MAX);
@@ -44,7 +44,7 @@ HRESULT CEmperorsProp::OnActivate() {
 }
 
 HRESULT CEmperorsProp::OnApplyChanges() {
-    _idleTime->UpdateIdleTime(_idleTimeValue);
+    _idleTimeInterface->UpdateIdleTime(_idleTimeValue);
     return S_OK;
 }
 

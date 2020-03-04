@@ -5,7 +5,7 @@
 
 class CEmperorsProp : public CBasePropertyPage {
 public:
-    static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *phr);
+    static CUnknown *WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *phr);
     CEmperorsProp(LPUNKNOWN pUnk, HRESULT *phr);
 
 private:
@@ -16,6 +16,6 @@ private:
     INT_PTR OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     void SetDirty();
 
-    IIdleTime *_idleTime;
+    IIdleTime *_idleTimeInterface;
     unsigned int _idleTimeValue;
 };

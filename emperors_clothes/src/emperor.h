@@ -9,7 +9,7 @@ class CEmperorFilter
     , public IIdleTime
     , public ISpecifyPropertyPages {
 public:
-    static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *phr);
+    static CUnknown *WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *phr);
 
     DECLARE_IUNKNOWN
 
@@ -17,11 +17,11 @@ public:
 
     STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv);
 
-    HRESULT Transform(IMediaSample *pSample);
     HRESULT CheckInputType(const CMediaType *mtIn);
+    HRESULT Transform(IMediaSample *pSample);
 
-    STDMETHODIMP Pause();
     STDMETHODIMP Run(REFERENCE_TIME tStart);
+    STDMETHODIMP Pause();
 
     STDMETHODIMP GetPages(CAUUID *pPages);
     STDMETHODIMP GetIdleTime(unsigned int *idleTime) const;

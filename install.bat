@@ -1,1 +1,1 @@
-regsvr32 /s emperors_clothes.ax
+regsvr32 emperors_clothes.ax

@@ -8,6 +8,7 @@
 #include <cguid.h>
 #include <initguid.h>
 
+// baseclasses
 #include <streams.h>
 
 #include "resource.h"

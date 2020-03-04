@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "registry.h"
-#include "constants.h"
+#include "g_constants.h"
 
 
 Registry::Registry() : _registryKey(nullptr) {
