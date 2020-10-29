@@ -18,7 +18,7 @@ unsigned int Registry::ReadIdleTime() const {
         DWORD idleTime;
         DWORD valueSize = sizeof(idleTime);
 
-        LSTATUS registryStatus = RegGetValue(_registryKey, nullptr, REGISTRY_IDLE_TIME_VALUE_NAME, RRF_RT_REG_DWORD, nullptr, &idleTime, &valueSize);
+        const LSTATUS registryStatus = RegGetValue(_registryKey, nullptr, REGISTRY_IDLE_TIME_VALUE_NAME, RRF_RT_REG_DWORD, nullptr, &idleTime, &valueSize);
         if (registryStatus == ERROR_SUCCESS) {
             if (idleTime < IDLE_TIME_MIN) {
                 idleTime = IDLE_TIME_MIN;
